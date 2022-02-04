@@ -1,0 +1,28 @@
+---
+- name: Instale k8s e Docker
+  become: yes
+  hosts: tag_name_k8s
+  roles:
+    - docker
+    - k8s-all
+
+- name: Instale k8s e Docker nos Nodes
+  become: yes
+  hosts: tag_Name_k8s
+  roles:
+    - docker
+    - k8s-all
+
+- name: Setup master node
+  become: yes
+  hosts: tag_type_master
+  roles:
+    - k8s-master
+
+- name: Setup node node
+  become: yes
+  hosts: tag_type_node
+  roles:
+    - k8s-node
+  
+

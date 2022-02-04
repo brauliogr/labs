@@ -1,0 +1,25 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: es-issuer
+  namespace: elk-test
+spec:
+  selfSigned: {}
+
+---
+
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: es-ca-cert
+  namespace: elk-test
+spec:
+  commonName: datahub
+  isCA: true
+  issuerRef:
+    kind: Issuer
+    name: es-issuer
+  secretName: es-ca-cert
+  subject:
+    organizations:
+      - identity

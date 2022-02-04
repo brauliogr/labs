@@ -1,0 +1,29 @@
+---
+- hosts: all
+  become: true
+
+  vars:
+    bastion:
+      user: "root"
+      host: "rabbitmq"
+
+    rabbitmq:
+      port: 5671
+      management_port: 15672
+      plugins:
+        - rabbitmq_aws
+        - rabbitmq_management
+        - rabbitmq_management_agent
+        - rabbitmq_stomp
+        - rabbitmq_peer_discovery_common
+        - rabbitmq_prometheus
+
+      erlang_cookie: "cmFiYml0bXEtY29ubmVjdG9yLXByb2Q="
+
+      master_hostname: "rabbitmq"
+      cluster_name: "rabbitmq"
+
+      ulimit: 65536
+
+  roles:
+    - { role: rabbitmq }

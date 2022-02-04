@@ -1,0 +1,38 @@
+- name: Destrua qualquer cluster criado
+  command: kubeadm reset -f
+ 
+- name: Inicie o cluster k8s
+  command: kubeadm init
+  register: kubeadm_init_output
+
+- name: Crie o arquivo com a saida
+  copy: 
+    content: "{{ kubeadm_init_output.stdout }}"
+    dest: /root/kubeadminit
+
+- name: Prepare o script do kubejoin
+  shell: tail -2 /root/kubeadminit > /root/kubejoin.sh
+
+- name: Get Kubejoin
+  fetch:
+    dest: ./join
+    src: /root/kubejoin.sh
+
+- name: Organize os arquivos
+  shell: |
+         cp join/{{ inventory_hostname }}/root/kubejoin.sh join/
+         rm -rf join/{{ inventory_hostname }}      
+  delegate_to: localhost
+  become: no
+
+- name: Instale o Network Pod
+  shell: kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+    
+- name: Copie o arquivo do config
+  shell: cp /etc/kubernetes/admin.conf /root/.kube/config
+  
+- name: Reinicia o Kubelet
+  command: systemctl restart kubelet
+

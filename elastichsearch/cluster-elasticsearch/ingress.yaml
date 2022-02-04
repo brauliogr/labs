@@ -1,0 +1,24 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: elasticsearch-7-test
+  namespace: elk-test
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  rules:
+  - host: elasticsearch-test.domain.io
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: elasticsearch-7-master-test-headless
+          servicePort: 9200
+  - host: elasticsearch-test.domain.app
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: elasticsearch-7-master-test-headless
+          servicePort: 9200

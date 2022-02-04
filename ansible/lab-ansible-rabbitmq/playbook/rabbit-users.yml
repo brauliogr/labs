@@ -1,0 +1,49 @@
+---
+  - hosts: rabbitmq
+    become: true
+    vars:
+      bastion:
+
+        user: "admin"
+        host: "rabbitmq"
+
+      rabbitmq:
+        users:
+          - name: connector_prod
+
+    tasks:
+    - name: Setup rabbitmq vhosts
+      rabbitmq_vhost:
+        name: "/{{ item.name }}"
+        state: present
+      with_items: "{{ rabbitmq.users }}" 
+
+    - name: Setup rabbitmq users
+      rabbitmq_user:
+        user: "{{ item.name }}"
+        password: "{{ item.name }}#123"
+        tags: "monitoring"
+        vhost: "/{{ item.name }}"
+        state: present
+      with_items: "{{ rabbitmq.users }}"
+
+    - name: Setup rabbitmq user policies
+      rabbitmq_policy:
+        name: "ha"
+        pattern: .*
+        vhost: "/{{ item.name }}"
+        tags:
+          ha-mode: all
+          ha-sync-mode: automatic
+        state: present
+      with_items: "{{ rabbitmq.users }}"
+
+    - name: Setup rabbitmq ha policy
+      rabbitmq_policy:
+        name: "ha"
+        pattern: .*
+        vhost: "/"
+        tags:
+          ha-mode: all
+          ha-sync-mode: automatic
+        state: present   

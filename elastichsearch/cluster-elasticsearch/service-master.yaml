@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: elasticsearch-7-master-test
+  name: elasticsearch-7-master-test
+  namespace: elk-test
+spec:
+  ports:
+  - name: http
+    port: 9200
+    protocol: TCP
+    targetPort: 9200
+  - name: transport
+    port: 9300
+    protocol: TCP
+    targetPort: 9300
+  selector:
+    app: elasticsearch-7-master-test
+  sessionAffinity: None
+  type: ClusterIP

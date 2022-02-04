@@ -1,0 +1,228 @@
+---
+- name: Configure system settings, file descriptors and number of threads
+  pam_limits:
+    domain: '*'
+    limit_type: "{{item.limit_type}}"
+    limit_item: "{{item.limit_item}}"
+    value: "{{item.value}}"
+  with_items:
+    - { limit_type: '-', limit_item: 'nofile', value: 65536 }
+    - { limit_type: '-', limit_item: 'nproc', value: 65536 }
+    - { limit_type: 'soft', limit_item: 'memlock', value: unlimited }
+    - { limit_type: 'hard', limit_item: 'memlock', value: unlimited }
+
+- name: Reload settings from all system configuration files
+  shell: sysctl --system
+
+- name: Add apt signing key rabbitmq
+  shell: curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.deb.sh | sudo bash
+
+- name: Add apt signing key erlang
+  apt_key:
+    url: https://packages.erlang-solutions.com/ubuntu/erlang_solutions.asc
+    state: present
+
+- name: Enable apt HTTPS Transport
+  apt:
+    name: apt-transport-https
+    state: latest
+    update_cache: no
+    cache_valid_time: 3600      
+    autoclean: yes
+    install_recommends: no
+
+- name: Add erlang apt repository
+  apt_repository: 
+    repo: 'deb https://packages.erlang-solutions.com/ubuntu bionic contrib' 
+    state: present 
+    filename: erlang
+    update_cache: no
+
+- name: Update APT package manager repositories cache
+  become: true
+  apt:
+    update_cache: yes
+
+- name: Install erlang packages
+  apt:
+    pkg:
+    - erlang-base=1:23.1-1 
+    - erlang-crypto=1:23.1-1 
+    - erlang-eldap=1:23.1-1 
+    - erlang-inets=1:23.1-1 
+    - erlang-mnesia=1:23.1-1 
+    - erlang-os-mon=1:23.1-1 
+    - erlang-parsetools=1:23.1-1 
+    - erlang-public-key=1:23.1-1 
+    - erlang-runtime-tools=1:23.1-1 
+    - erlang-ssl=1:23.1-1 
+    - erlang-syntax-tools=1:23.1-1 
+    - erlang-tools=1:23.1-1 
+    - erlang-xmerl=1:23.1-1 
+    - erlang-asn1=1:23.1-1 
+    - erlang-snmp=1:23.1-1  
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600      
+    autoclean: yes
+    install_recommends: no
+
+- name: Install rabbitmq packages
+  apt:
+    pkg:
+    - rabbitmq-server=3.8.13-1
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600      
+    autoclean: yes
+    install_recommends: no
+  
+- name: Create rabbitmq directory
+  file:
+    path: /rabbitmq
+    state: directory
+    mode: '0755'
+
+
+- name: Create data dir
+  file:
+    path: /rabbitmq/data
+    state: directory
+    group: rabbitmq
+    owner: rabbitmq
+    mode: 0750
+    recurse: yes
+
+- name: Create log dir
+  file:
+    path: /rabbitmq/logs
+    state: directory
+    group: rabbitmq
+    owner: rabbitmq
+    mode: 0750
+    recurse: yes
+
+- name: Create a symbolic link
+  file:
+    src: /etc/rabbitmq
+    dest: /rabbitmq/etc
+    owner: rabbitmq
+    group: rabbitmq
+    state: link
+
+- name: Recursively change ownership of rabbitmq directory
+  file:
+    path: /rabbitmq
+    state: directory
+    recurse: yes
+    owner: rabbitmq
+    group: rabbitmq
+
+- name: Write the rabbitmq enabled_plugins file
+  template:
+    src: enabled_plugins
+    dest: /etc/rabbitmq/enabled_plugins
+    group: rabbitmq
+    owner: rabbitmq
+    mode: 0640
+    
+- name: Setup rabbitmq config file
+  template:
+    src: rabbitmq.conf.j2
+    dest: /etc/rabbitmq/rabbitmq.conf
+    group: rabbitmq
+    owner: rabbitmq
+    mode: 0640
+  
+- name: Setup rabbitmq environment config file
+  template:
+    src: rabbitmq-env.conf.j2
+    dest: /etc/rabbitmq/rabbitmq-env.conf
+    group: rabbitmq
+    owner: rabbitmq
+    mode: 0640
+    
+- name: Updating rabbitmq erlang cookie
+  template:
+    src: erlang.cookie.j2
+    dest: /var/lib/rabbitmq/.erlang.cookie
+    group: rabbitmq
+    owner: rabbitmq
+    mode: 0400
+
+- name: Ensure rabbitmq service is enabled and restarts if is running
+  service:
+    name: rabbitmq-server
+    state: restarted
+    enabled: yes
+
+- name: Create Vhost
+  rabbitmq_vhost:
+    name: /connector_prod
+    state: present
+
+- name: Add admin user
+  rabbitmq_user:
+    user: admin
+    password: admin
+    tags: administrator
+    vhost: /
+    configure_priv: .*
+    read_priv: .*
+    write_priv: .*
+    state: present
+
+- name: Add connector_prod user
+  rabbitmq_user:
+    user: connector_prod
+    password: 8d9HU8kthUqDExnx
+    tags: administrator
+    vhost: /connector_prod
+    configure_priv: .*
+    read_priv: .*
+    write_priv: .*
+    state: present
+
+- name: Remove guest user
+  rabbitmq_user:
+    user: guest
+    state: absent
+   
+- name: Add IP address of all hosts to all hosts
+  lineinfile:
+    dest: /etc/hosts
+    regexp: '.*{{ item }}$'
+    line: "{{ hostvars[item].ansible_host }} {{item}}"
+    state: present
+  when: hostvars[item].ansible_host is defined
+  with_items: "{{ groups.all }}"
+
+- name: Cluster Configuration - Stop node
+  shell: if [ "{{ ansible_hostname }}" != "{{ rabbitmq.master_hostname }}" ]; then rabbitmqctl stop_app; fi
+  
+- name: Cluster Configuration - Ingress node on cluster
+  shell: if [ "{{ ansible_hostname }}" != "{{ rabbitmq.master_hostname }}" ]; then rabbitmqctl join_cluster rabbit@"{{ rabbitmq.master_hostname }}"; fi
+  
+- name: Cluster Configuration - Start node
+  shell: if [ "{{ ansible_hostname }}" != "{{ rabbitmq.master_hostname }}" ]; then rabbitmqctl start_app; fi
+
+- name: Cluster Configuration - Set cluster name
+  shell: if [ "{{ ansible_hostname }}" = "{{ rabbitmq.master_hostname }}" ]; then rabbitmqctl set_cluster_name rabbitmq@"{{ rabbitmq.cluster_name }}"; fi
+
+# node-exporter install
+- name: Create python symbolic link
+  file:
+    src: /usr/bin/python3.8
+    dest: /usr/bin/python
+    owner: root
+    group: root
+    state: link
+
+# Create link resolv.conf
+- name: Create resolv.conf simbolic link
+  file:
+    src: /run/systemd/resolve/resolv.conf
+    dest: /etc/resolv.conf
+    owner: root
+    group: root
+    state: link

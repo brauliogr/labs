@@ -1,0 +1,8 @@
+- name: Copie o join para os nodes
+  copy:
+    dest: /opt/kubejoin.sh
+    src: ./join/kubejoin.sh
+    mode: '0700'
+
+- name: Rode o comando remoto
+  shell: /opt/kubejoin.sh
