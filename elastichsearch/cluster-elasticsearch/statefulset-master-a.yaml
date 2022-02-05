@@ -211,7 +211,7 @@ spec:
   - metadata:
       name: elasticsearch-7-master-test
     spec:
-      #storageClassName: gp2-a
+      storageClassName: manual
       accessModes: [ ReadWriteOnce ]
       resources:
         requests:
