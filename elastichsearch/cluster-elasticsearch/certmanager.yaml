@@ -22,4 +22,4 @@ spec:
   secretName: es-ca-cert
   subject:
     organizations:
-      - identity
+      - domain
