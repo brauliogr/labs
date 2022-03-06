@@ -1,7 +1,7 @@
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: kibana-events
+  name: kibana-test
   namespace: elk-test
   annotations:
     kubernetes.io/ingress.class: "nginx"
@@ -17,13 +17,17 @@ spec:
     http:
       paths:
       - backend:
-          serviceName: kibana-events
-          servicePort: 5601
+          service:
+            name: kibana-events
+            port: 
+              number: 5601
         path: /
-  - host: kibana.domain.net
+  - host: kibana.domain.com
     http:
       paths:
       - backend:
-          serviceName: kibana-events
-          servicePort: 5601
+          service:
+            name: kibana-events
+            port: 
+              number: 5601
         path: /

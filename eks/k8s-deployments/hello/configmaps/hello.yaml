@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hello2
+  namespace: poc-test
+data:
+  ITS: "ME"

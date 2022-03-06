@@ -1,0 +1,17 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: hello-metrics
+  namespace: poc-test
+  labels:
+    app: hello-metrics
+spec:
+  selector:
+    app: hello2
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - protocol: TCP
+    port: 8080
+    name: metrics
+    targetPort: 8080
