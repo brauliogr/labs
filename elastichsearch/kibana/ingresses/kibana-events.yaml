@@ -1,13 +1,19 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: kibana-test
 =======
+=======
+>>>>>>> ffa3b114e1caee54bc63e61d9bc5d2b4d19166e8
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: kibana-events
+<<<<<<< HEAD
+>>>>>>> ffa3b114e1caee54bc63e61d9bc5d2b4d19166e8
+=======
 >>>>>>> ffa3b114e1caee54bc63e61d9bc5d2b4d19166e8
   namespace: elk-test
   annotations:
@@ -25,6 +31,7 @@ spec:
       paths:
       - backend:
 <<<<<<< HEAD
+<<<<<<< HEAD
           service:
             name: kibana-events
             port: 
@@ -39,6 +46,8 @@ spec:
             port: 
               number: 5601
 =======
+=======
+>>>>>>> ffa3b114e1caee54bc63e61d9bc5d2b4d19166e8
           serviceName: kibana-events
           servicePort: 5601
         path: /
@@ -48,5 +57,8 @@ spec:
       - backend:
           serviceName: kibana-events
           servicePort: 5601
+<<<<<<< HEAD
+>>>>>>> ffa3b114e1caee54bc63e61d9bc5d2b4d19166e8
+=======
 >>>>>>> ffa3b114e1caee54bc63e61d9bc5d2b4d19166e8
         path: /
